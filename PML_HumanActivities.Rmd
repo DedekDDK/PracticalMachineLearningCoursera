@@ -10,7 +10,7 @@ Outcome to predict are Human Activity levels A to E contained in column 'classe'
 
 We will explore the data and decide on the variables to include in our prediction model. 
 The data exploration will not presented in this work. 
-It was done both with R (e. g. summart(train.data), View(train.data)) and with software such as LibreOffice Calc.
+It was done both with R (e. g. summary(train.data), View(train.data)) and with software such as LibreOffice Calc.
 
 After data exploration and decision on the features/variables to use, we will split the pml-training.csv data set into a training, a cross validation and a test set.
 The training set will be used to train different tree models (CART and Random Forests), each with and without Principal Component Analysis (PCA), using different variance retention thresholds.
@@ -34,6 +34,7 @@ test.data <- read.csv('pml-testing.csv',
 
 ##Data exploration and feature selection:
 After exploring the data set, it seems clear to the author that the following columns can be omitted:
+
 - first column with row ID (column 1)  
 - user names (user_name; column 2)  
 - timestamps (raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp; columns 3 to 5)  
@@ -66,6 +67,7 @@ for (col.name in names(train.data[,-c(1,2,3,4,5,6,7,160)])) {
 We now have a new training data set with only `r dim(train.data.clean)[2]` variables instead of `r dim(train.data)[2]` variables of the original data.
 
 We now randomize the data set, and create ...:
+
 - training set (13000 rows)  
 - cross validation set (5000 rows)  
 - test set (1622 rows)  
@@ -86,6 +88,7 @@ y.test <- train.data.clean[random.indexes[18001:19622], 1]
 ```
 
 We now train 8 different models on the training set:
+
 - CART tree  
 - CART tree, with Principal Component Analysis (retaining 95% of the variance)  
 - CART tree, with Principal Component Analysis (retaining 90% of the variance)  
@@ -101,11 +104,14 @@ The model with the highest accuracy will be choosen.
 ```{r cache=TRUE}
 library(caret)
 
+# CART tree:
 date.fit.rpart <- date()
 fit.rpart <- train(y.train ~ ., data=X.train, method='rpart')
 table(predict(fit.rpart, newdata=X.cv), y.cv)
 acc.rpart <- sum(predict(fit.rpart, newdata=X.cv) == y.cv) / length(y.cv)
+acc.rpart
 
+# CART tree, with Principal Component Analysis (retaining 95% of the variance):
 date.fit.rpart.pca.95 <- date()
 pre.process.pca.95 <- preProcess(X.train, method='pca', thresh=.95)
 X.train.pca.95 <- predict(pre.process.pca.95, X.train)
@@ -113,7 +119,9 @@ fit.rpart.pca.95 <- train(y.train ~ ., data=X.train.pca.95, method='rpart')
 X.cv.pca.95 <- predict(pre.process.pca.95, X.cv)
 table(predict(fit.rpart.pca.95, newdata=X.cv.pca.95), y.cv)
 acc.rpart.pca.95 <- sum(predict(fit.rpart.pca.95, newdata=X.cv.pca.95) == y.cv) / length(y.cv)
+acc.rpart.pca.95
 
+# CART tree, with Principal Component Analysis (retaining 90% of the variance):
 date.fit.rpart.pca.90 <- date()
 pre.process.pca.90 <- preProcess(X.train, method='pca', thresh=.90)
 X.train.pca.90 <- predict(pre.process.pca.90, X.train)
@@ -121,7 +129,9 @@ fit.rpart.pca.90 <- train(y.train ~ ., data=X.train.pca.90, method='rpart')
 X.cv.pca.90 <- predict(pre.process.pca.90, X.cv)
 table(predict(fit.rpart.pca.90, newdata=X.cv.pca.90), y.cv)
 acc.rpart.pca.90 <- sum(predict(fit.rpart.pca.90, newdata=X.cv.pca.90) == y.cv) / length(y.cv)
+acc.rpart.pca.90
 
+#CART tree, with Principal Component Analysis (retaining 80% of the variance):
 date.fit.rpart.pca.80 <- date()
 pre.process.pca.80 <- preProcess(X.train, method='pca', thresh=.80)
 X.train.pca.80 <- predict(pre.process.pca.80, X.train)
@@ -129,27 +139,37 @@ fit.rpart.pca.80 <- train(y.train ~ ., data=X.train.pca.80, method='rpart')
 X.cv.pca.80 <- predict(pre.process.pca.80, X.cv)
 table(predict(fit.rpart.pca.80, newdata=X.cv.pca.80), y.cv)
 acc.rpart.pca.80 <- sum(predict(fit.rpart.pca.80, newdata=X.cv.pca.80) == y.cv) / length(y.cv)
+acc.rpart.pca.80
 
 library(randomForest)
+
+# Random Forest tree:
 date.fit.rf <- date()
 fit.rf <- randomForest(y.train ~ ., data=X.train)
 table(predict(fit.rf, newdata=X.cv), y.cv)
 acc.rf <- sum(predict(fit.rf, newdata=X.cv) == y.cv) / length(y.cv)
+acc.rf
 
+# Random Forest tree, with Principal Component Analysis (retaining 95% of the variance):
 date.fit.rf.pca.95 <- date()
 fit.rf.pca.95 <- randomForest(y.train ~ ., data=X.train.pca.95)
 table(predict(fit.rf.pca.95, newdata=X.cv.pca.95), y.cv)
 acc.rf.pca.95 <- sum(predict(fit.rf.pca.95, newdata=X.cv.pca.95) == y.cv) / length(y.cv)
+acc.rf.pca.95
 
+# Random Forest tree, with Principal Component Analysis (retaining 90% of the variance):
 date.fit.rf.pca.90 <- date()
 fit.rf.pca.90 <- randomForest(y.train ~ ., data=X.train.pca.90)
 table(predict(fit.rf.pca.90, newdata=X.cv.pca.90), y.cv)
 acc.rf.pca.90 <- sum(predict(fit.rf.pca.90, newdata=X.cv.pca.90) == y.cv) / length(y.cv)
+acc.rf.pca.90
 
+# Random Forest tree, with Principal Component Analysis (retaining 80% of the variance):
 date.fit.rf.pca.80 <- date()
 fit.rf.pca.80 <- randomForest(y.train ~ ., data=X.train.pca.80)
 table(predict(fit.rf.pca.80, newdata=X.cv.pca.80), y.cv)
 acc.rf.pca.80 <- sum(predict(fit.rf.pca.80, newdata=X.cv.pca.80) == y.cv) / length(y.cv)
+acc.rf.pca.80
 
 date.end <- date()
 ```
