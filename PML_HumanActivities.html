@@ -76,7 +76,13 @@ test.data &lt;- read.csv('pml-testing.csv',
 </div>
 <div id="data-exploration-and-feature-selection" class="section level2">
 <h2>Data exploration and feature selection:</h2>
-<p>After exploring the data set, it seems clear to the author that the following columns can be omitted: - first column with row ID (column 1)<br />- user names (user_name; column 2)<br />- timestamps (raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp; columns 3 to 5)<br />- window information (new_window, num_window; columns 6 and 7)</p>
+<p>After exploring the data set, it seems clear to the author that the following columns can be omitted:</p>
+<ul>
+<li>first column with row ID (column 1)<br /></li>
+<li>user names (user_name; column 2)<br /></li>
+<li>timestamps (raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp; columns 3 to 5)<br /></li>
+<li>window information (new_window, num_window; columns 6 and 7)</li>
+</ul>
 <p>The data exploration also brings to light that some columns contain mostly empty strings, ‘NA’ strings or NA values, as well as ‘#DIV/0!’ strings. We develop an algorithm that identifies those columns in order to omit them:</p>
 <pre class="r"><code>train.data.clean &lt;- data.frame(classe=train.data$classe) # empty data frame, only with 'classe' as first column
 
@@ -96,7 +102,12 @@ for (col.name in names(train.data[,-c(1,2,3,4,5,6,7,160)])) {
   } 
 }</code></pre>
 <p>We now have a new training data set with only 53 variables instead of 160 variables of the original data.</p>
-<p>We now randomize the data set, and create …: - training set (13000 rows)<br />- cross validation set (5000 rows)<br />- test set (1622 rows)</p>
+<p>We now randomize the data set, and create …:</p>
+<ul>
+<li>training set (13000 rows)<br /></li>
+<li>cross validation set (5000 rows)<br /></li>
+<li>test set (1622 rows)</li>
+</ul>
 <pre class="r"><code>set.seed(123)
 random.indexes &lt;- sample(as.numeric(dimnames(train.data.clean)[[1]]))
 
@@ -109,7 +120,17 @@ X.test &lt;- train.data.clean[random.indexes[18001:19622], -1]
 y.train &lt;- train.data.clean[random.indexes[1:13000], 1]
 y.cv &lt;- train.data.clean[random.indexes[13001:18000], 1]
 y.test &lt;- train.data.clean[random.indexes[18001:19622], 1]</code></pre>
-<p>We now train 8 different models on the training set: - CART tree<br />- CART tree, with Principal Component Analysis (retaining 95% of the variance)<br />- CART tree, with Principal Component Analysis (retaining 90% of the variance)<br />- CART tree, with Principal Component Analysis (retaining 80% of the variance)<br />- Random Forest tree<br />- Random Forest tree, with Principal Component Analysis (retaining 95% of the variance)<br />- Random Forest tree, with Principal Component Analysis (retaining 90% of the variance)<br />- Random Forest tree, with Principal Component Analysis (retaining 80% of the variance)</p>
+<p>We now train 8 different models on the training set:</p>
+<ul>
+<li>CART tree<br /></li>
+<li>CART tree, with Principal Component Analysis (retaining 95% of the variance)<br /></li>
+<li>CART tree, with Principal Component Analysis (retaining 90% of the variance)<br /></li>
+<li>CART tree, with Principal Component Analysis (retaining 80% of the variance)<br /></li>
+<li>Random Forest tree<br /></li>
+<li>Random Forest tree, with Principal Component Analysis (retaining 95% of the variance)<br /></li>
+<li>Random Forest tree, with Principal Component Analysis (retaining 90% of the variance)<br /></li>
+<li>Random Forest tree, with Principal Component Analysis (retaining 80% of the variance)</li>
+</ul>
 <p>We calculate accuracy of the models with the cross validation set. The model with the highest accuracy will be choosen.</p>
 <pre class="r"><code>library(caret)</code></pre>
 <pre><code>## Loading required package: lattice
