@@ -1,0 +1,182 @@
+---
+title: "Practical Machine Learning Course Project"
+output: html_document
+---
+
+##Introduction:
+Aim of the Practical Machine Learning Course Project is to conduct a Human Activity Recognition study, based on data given under URL [https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv).
+
+Outcome to predict are Human Activity levels A to E contained in column 'classe' in the data sets.
+
+We will explore the data and decide on the variables to include in our prediction model. 
+The data exploration will not presented in this work. 
+It was done both with R (e. g. summart(train.data), View(train.data)) and with software such as LibreOffice Calc.
+
+After data exploration and decision on the features/variables to use, we will split the pml-training.csv data set into a training, a cross validation and a test set.
+The training set will be used to train different tree models (CART and Random Forests), each with and without Principal Component Analysis (PCA), using different variance retention thresholds.
+The cross validation set is used to choose the best performing model, based on the lowest accuracy on the cross validation set.
+The test set will be used to estimate the final accuracy of the model.
+
+We then predict the Human Activity with data set [https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv) with the best performing model.
+
+##Loading the data sets:
+
+```{r cache=TRUE}
+setwd('C:/temp')
+train.data <- read.csv('pml-training.csv', 
+                        header=TRUE, 
+                        na.strings='NA'
+                      )
+test.data <- read.csv('pml-testing.csv', 
+                      header=TRUE, 
+                      na.strings='NA')
+```
+
+##Data exploration and feature selection:
+After exploring the data set, it seems clear to the author that the following columns can be omitted:
+- first column with row ID (column 1)  
+- user names (user_name; column 2)  
+- timestamps (raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp; columns 3 to 5)  
+- window information (new_window, num_window; columns 6 and 7)  
+
+The data exploration also brings to light that some columns contain mostly empty strings, 'NA' strings or NA values, as well as '#DIV/0!' strings. 
+We develop an algorithm that identifies those columns in order to omit them:
+
+```{r cache=TRUE}
+
+train.data.clean <- data.frame(classe=train.data$classe) # empty data frame, only with 'classe' as first column
+
+# loop over all columns, except the ones we already exluded (see above)
+for (col.name in names(train.data[,-c(1,2,3,4,5,6,7,160)])) {
+  if(
+      (
+        sum(is.na(train.data[, col.name])) + 
+        sum(train.data[, col.name] == 'NA', na.rm=TRUE) + 
+        sum(train.data[, col.name] == '', na.rm=TRUE) +
+        sum(train.data[, col.name] == '#DIV/0!', na.rm=TRUE)  
+      ) / length(train.data[, col.name]) < .85 # some value close to 100%
+    ) {
+      col.names.new <- c(names(train.data.clean), col.name)
+      train.data.clean <- cbind(train.data.clean, train.data[, col.name])
+      names(train.data.clean) <- col.names.new
+  } 
+}
+```
+
+We now have a new training data set with only `r dim(train.data.clean)[2]` variables instead of `r dim(train.data)[2]` variables of the original data.
+
+We now randomize the data set, and create ...:
+- training set (13000 rows)  
+- cross validation set (5000 rows)  
+- test set (1622 rows)  
+
+```{r cache=TRUE}
+set.seed(123)
+random.indexes <- sample(as.numeric(dimnames(train.data.clean)[[1]]))
+
+# variables without outcome 'classe'
+X.train <- train.data.clean[random.indexes[1:13000], -1] 
+X.cv <- train.data.clean[random.indexes[13001:18000], -1]
+X.test <- train.data.clean[random.indexes[18001:19622], -1]
+
+# outcome 'classe'
+y.train <- train.data.clean[random.indexes[1:13000], 1]
+y.cv <- train.data.clean[random.indexes[13001:18000], 1]
+y.test <- train.data.clean[random.indexes[18001:19622], 1]
+```
+
+We now train 8 different models on the training set:
+- CART tree  
+- CART tree, with Principal Component Analysis (retaining 95% of the variance)  
+- CART tree, with Principal Component Analysis (retaining 90% of the variance)  
+- CART tree, with Principal Component Analysis (retaining 80% of the variance)  
+- Random Forest tree  
+- Random Forest tree, with Principal Component Analysis (retaining 95% of the variance)  
+- Random Forest tree, with Principal Component Analysis (retaining 90% of the variance)  
+- Random Forest tree, with Principal Component Analysis (retaining 80% of the variance)  
+
+We calculate accuracy of the models with the cross validation set.
+The model with the highest accuracy will be choosen. 
+
+```{r cache=TRUE}
+library(caret)
+
+date.fit.rpart <- date()
+fit.rpart <- train(y.train ~ ., data=X.train, method='rpart')
+table(predict(fit.rpart, newdata=X.cv), y.cv)
+acc.rpart <- sum(predict(fit.rpart, newdata=X.cv) == y.cv) / length(y.cv)
+
+date.fit.rpart.pca.95 <- date()
+pre.process.pca.95 <- preProcess(X.train, method='pca', thresh=.95)
+X.train.pca.95 <- predict(pre.process.pca.95, X.train)
+fit.rpart.pca.95 <- train(y.train ~ ., data=X.train.pca.95, method='rpart')
+X.cv.pca.95 <- predict(pre.process.pca.95, X.cv)
+table(predict(fit.rpart.pca.95, newdata=X.cv.pca.95), y.cv)
+acc.rpart.pca.95 <- sum(predict(fit.rpart.pca.95, newdata=X.cv.pca.95) == y.cv) / length(y.cv)
+
+date.fit.rpart.pca.90 <- date()
+pre.process.pca.90 <- preProcess(X.train, method='pca', thresh=.90)
+X.train.pca.90 <- predict(pre.process.pca.90, X.train)
+fit.rpart.pca.90 <- train(y.train ~ ., data=X.train.pca.90, method='rpart')
+X.cv.pca.90 <- predict(pre.process.pca.90, X.cv)
+table(predict(fit.rpart.pca.90, newdata=X.cv.pca.90), y.cv)
+acc.rpart.pca.90 <- sum(predict(fit.rpart.pca.90, newdata=X.cv.pca.90) == y.cv) / length(y.cv)
+
+date.fit.rpart.pca.80 <- date()
+pre.process.pca.80 <- preProcess(X.train, method='pca', thresh=.80)
+X.train.pca.80 <- predict(pre.process.pca.80, X.train)
+fit.rpart.pca.80 <- train(y.train ~ ., data=X.train.pca.80, method='rpart')
+X.cv.pca.80 <- predict(pre.process.pca.80, X.cv)
+table(predict(fit.rpart.pca.80, newdata=X.cv.pca.80), y.cv)
+acc.rpart.pca.80 <- sum(predict(fit.rpart.pca.80, newdata=X.cv.pca.80) == y.cv) / length(y.cv)
+
+library(randomForest)
+date.fit.rf <- date()
+fit.rf <- randomForest(y.train ~ ., data=X.train)
+table(predict(fit.rf, newdata=X.cv), y.cv)
+acc.rf <- sum(predict(fit.rf, newdata=X.cv) == y.cv) / length(y.cv)
+
+date.fit.rf.pca.95 <- date()
+fit.rf.pca.95 <- randomForest(y.train ~ ., data=X.train.pca.95)
+table(predict(fit.rf.pca.95, newdata=X.cv.pca.95), y.cv)
+acc.rf.pca.95 <- sum(predict(fit.rf.pca.95, newdata=X.cv.pca.95) == y.cv) / length(y.cv)
+
+date.fit.rf.pca.90 <- date()
+fit.rf.pca.90 <- randomForest(y.train ~ ., data=X.train.pca.90)
+table(predict(fit.rf.pca.90, newdata=X.cv.pca.90), y.cv)
+acc.rf.pca.90 <- sum(predict(fit.rf.pca.90, newdata=X.cv.pca.90) == y.cv) / length(y.cv)
+
+date.fit.rf.pca.80 <- date()
+fit.rf.pca.80 <- randomForest(y.train ~ ., data=X.train.pca.80)
+table(predict(fit.rf.pca.80, newdata=X.cv.pca.80), y.cv)
+acc.rf.pca.80 <- sum(predict(fit.rf.pca.80, newdata=X.cv.pca.80) == y.cv) / length(y.cv)
+
+date.end <- date()
+```
+
+##Model selection summary:
+CART trees perform poorly on the given problem, regardless wether or not PCA has been applied. 
+The accuracy for CART tress spans from `r min(c(acc.rpart, acc.rpart.pca.95, acc.rpart.pca.90, acc.rpart.pca.80))` to `r max(c(acc.rpart, acc.rpart.pca.95, acc.rpart.pca.90, acc.rpart.pca.80))`.
+
+The Random Forest models perform much better than CART models. 
+However, PCA does not bring improvement in accuracy:
+Accuracy of the Random Forest model with default settings is `r acc.rf`, whereas accuracy of Random Forest models with PCA span from `r min(c(acc.rf.pca.95, acc.rf.pca.90, acc.rf.pca.80))` to `r max(c(acc.rf.pca.95, acc.rf.pca.90, acc.rf.pca.80))`.
+
+We choose the model fitted into variable 'fit.rf' (Random Forest with default settings).
+
+To estimate the the accuracy of an unseen data set, we use the test set that we created above:
+
+```{r cache=TRUE}
+acc.estimate <- sum(predict(fit.rf, newdata=X.test) == y.test) / length(y.test)
+```
+
+We can estimate an prediction accuracy of `r acc.estimate` for unseen data.
+
+##Prediction of 20 unseen test cases:
+Last, we will predict the unknown Human Activity classes for the 20 data sets given in file pml-testing.csv:
+
+```{r cache=TRUE}
+predict(fit.rf, newdata=test.data[, names(X.train)])
+```
+
+These predicted classes will be used for the 'Submission' part of the Practical Machine Learning Course Project.
