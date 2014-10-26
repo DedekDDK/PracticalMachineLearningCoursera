@@ -132,13 +132,12 @@ y.test &lt;- train.data.clean[random.indexes[18001:19622], 1]</code></pre>
 <li>Random Forest tree, with Principal Component Analysis (retaining 80% of the variance)</li>
 </ul>
 <p>We calculate accuracy of the models with the cross validation set. The model with the highest accuracy will be choosen.</p>
-<pre class="r"><code>library(caret)</code></pre>
-<pre><code>## Loading required package: lattice
-## Loading required package: ggplot2</code></pre>
-<pre class="r"><code>date.fit.rpart &lt;- date()
-fit.rpart &lt;- train(y.train ~ ., data=X.train, method='rpart')</code></pre>
-<pre><code>## Loading required package: rpart</code></pre>
-<pre class="r"><code>table(predict(fit.rpart, newdata=X.cv), y.cv)</code></pre>
+<pre class="r"><code>library(caret)
+
+# CART tree:
+date.fit.rpart &lt;- date()
+fit.rpart &lt;- train(y.train ~ ., data=X.train, method='rpart')
+table(predict(fit.rpart, newdata=X.cv), y.cv)</code></pre>
 <pre><code>##    y.cv
 ##        A    B    C    D    E
 ##   A 1301  409  413  384  133
@@ -147,7 +146,9 @@ fit.rpart &lt;- train(y.train ~ ., data=X.train, method='rpart')</code></pre>
 ##   D    0    0    0    0    0
 ##   E    4    0    0    0  400</code></pre>
 <pre class="r"><code>acc.rpart &lt;- sum(predict(fit.rpart, newdata=X.cv) == y.cv) / length(y.cv)
-
+acc.rpart</code></pre>
+<pre><code>## [1] 0.4952</code></pre>
+<pre class="r"><code># CART tree, with Principal Component Analysis (retaining 95% of the variance):
 date.fit.rpart.pca.95 &lt;- date()
 pre.process.pca.95 &lt;- preProcess(X.train, method='pca', thresh=.95)
 X.train.pca.95 &lt;- predict(pre.process.pca.95, X.train)
@@ -162,7 +163,9 @@ table(predict(fit.rpart.pca.95, newdata=X.cv.pca.95), y.cv)</code></pre>
 ##   D  106  170   40  288  161
 ##   E   18  126   18   74  249</code></pre>
 <pre class="r"><code>acc.rpart.pca.95 &lt;- sum(predict(fit.rpart.pca.95, newdata=X.cv.pca.95) == y.cv) / length(y.cv)
-
+acc.rpart.pca.95</code></pre>
+<pre><code>## [1] 0.3694</code></pre>
+<pre class="r"><code># CART tree, with Principal Component Analysis (retaining 90% of the variance):
 date.fit.rpart.pca.90 &lt;- date()
 pre.process.pca.90 &lt;- preProcess(X.train, method='pca', thresh=.90)
 X.train.pca.90 &lt;- predict(pre.process.pca.90, X.train)
@@ -177,7 +180,9 @@ table(predict(fit.rpart.pca.90, newdata=X.cv.pca.90), y.cv)</code></pre>
 ##   D  106  170   40  288  161
 ##   E   18  126   18   74  249</code></pre>
 <pre class="r"><code>acc.rpart.pca.90 &lt;- sum(predict(fit.rpart.pca.90, newdata=X.cv.pca.90) == y.cv) / length(y.cv)
-
+acc.rpart.pca.90</code></pre>
+<pre><code>## [1] 0.3694</code></pre>
+<pre class="r"><code>#CART tree, with Principal Component Analysis (retaining 80% of the variance):
 date.fit.rpart.pca.80 &lt;- date()
 pre.process.pca.80 &lt;- preProcess(X.train, method='pca', thresh=.80)
 X.train.pca.80 &lt;- predict(pre.process.pca.80, X.train)
@@ -192,11 +197,12 @@ table(predict(fit.rpart.pca.80, newdata=X.cv.pca.80), y.cv)</code></pre>
 ##   D  104  194   42  285  171
 ##   E   13   43    0   81  208</code></pre>
 <pre class="r"><code>acc.rpart.pca.80 &lt;- sum(predict(fit.rpart.pca.80, newdata=X.cv.pca.80) == y.cv) / length(y.cv)
+acc.rpart.pca.80</code></pre>
+<pre><code>## [1] 0.38</code></pre>
+<pre class="r"><code>library(randomForest)
 
-library(randomForest)</code></pre>
-<pre><code>## randomForest 4.6-10
-## Type rfNews() to see new features/changes/bug fixes.</code></pre>
-<pre class="r"><code>date.fit.rf &lt;- date()
+# Random Forest tree:
+date.fit.rf &lt;- date()
 fit.rf &lt;- randomForest(y.train ~ ., data=X.train)
 table(predict(fit.rf, newdata=X.cv), y.cv)</code></pre>
 <pre><code>##    y.cv
@@ -207,7 +213,9 @@ table(predict(fit.rf, newdata=X.cv), y.cv)</code></pre>
 ##   D    0    0    2  791    2
 ##   E    0    0    0    2  915</code></pre>
 <pre class="r"><code>acc.rf &lt;- sum(predict(fit.rf, newdata=X.cv) == y.cv) / length(y.cv)
-
+acc.rf</code></pre>
+<pre><code>## [1] 0.996</code></pre>
+<pre class="r"><code># Random Forest tree, with Principal Component Analysis (retaining 95% of the variance):
 date.fit.rf.pca.95 &lt;- date()
 fit.rf.pca.95 &lt;- randomForest(y.train ~ ., data=X.train.pca.95)
 table(predict(fit.rf.pca.95, newdata=X.cv.pca.95), y.cv)</code></pre>
@@ -219,7 +227,9 @@ table(predict(fit.rf.pca.95, newdata=X.cv.pca.95), y.cv)</code></pre>
 ##   D    1    2   14  758    3
 ##   E    0    0    1    3  902</code></pre>
 <pre class="r"><code>acc.rf.pca.95 &lt;- sum(predict(fit.rf.pca.95, newdata=X.cv.pca.95) == y.cv) / length(y.cv)
-
+acc.rf.pca.95</code></pre>
+<pre><code>## [1] 0.9772</code></pre>
+<pre class="r"><code># Random Forest tree, with Principal Component Analysis (retaining 90% of the variance):
 date.fit.rf.pca.90 &lt;- date()
 fit.rf.pca.90 &lt;- randomForest(y.train ~ ., data=X.train.pca.90)
 table(predict(fit.rf.pca.90, newdata=X.cv.pca.90), y.cv)</code></pre>
@@ -231,7 +241,9 @@ table(predict(fit.rf.pca.90, newdata=X.cv.pca.90), y.cv)</code></pre>
 ##   D    4    2   17  753    3
 ##   E    0    1    0    4  901</code></pre>
 <pre class="r"><code>acc.rf.pca.90 &lt;- sum(predict(fit.rf.pca.90, newdata=X.cv.pca.90) == y.cv) / length(y.cv)
-
+acc.rf.pca.90</code></pre>
+<pre><code>## [1] 0.972</code></pre>
+<pre class="r"><code># Random Forest tree, with Principal Component Analysis (retaining 80% of the variance):
 date.fit.rf.pca.80 &lt;- date()
 fit.rf.pca.80 &lt;- randomForest(y.train ~ ., data=X.train.pca.80)
 table(predict(fit.rf.pca.80, newdata=X.cv.pca.80), y.cv)</code></pre>
@@ -243,8 +255,9 @@ table(predict(fit.rf.pca.80, newdata=X.cv.pca.80), y.cv)</code></pre>
 ##   D    6    5   12  743    9
 ##   E    5    3    0    5  889</code></pre>
 <pre class="r"><code>acc.rf.pca.80 &lt;- sum(predict(fit.rf.pca.80, newdata=X.cv.pca.80) == y.cv) / length(y.cv)
-
-date.end &lt;- date()</code></pre>
+acc.rf.pca.80</code></pre>
+<pre><code>## [1] 0.9606</code></pre>
+<pre class="r"><code>date.end &lt;- date()</code></pre>
 </div>
 <div id="model-selection-summary" class="section level2">
 <h2>Model selection summary:</h2>
